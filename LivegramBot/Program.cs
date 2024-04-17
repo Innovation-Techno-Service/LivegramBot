@@ -41,21 +41,31 @@ namespace LivegramBot
 
                 Console.WriteLine(response);
             }
-            else if (e.Message.Chat.Id != chatId)
+            else if (e.Message.Chat.Id != chatId && e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Text)
             {
                 _botClient.SendTextMessageAsync(e.Message.Chat.Id, "Sizning habaringiz muvaffaqiyatli yuborildi");
-                _botClient.ForwardMessageAsync(chatId, e.Message.Chat.Id, e.Message.MessageId);
-                _botClient.ForwardMessageAsync(chatId, e.Message.Chat.Id, e.Message.MessageId);
+                _botClient.SendTextMessageAsync(chatId, $"{e.Message.Text} | {e.Message.Chat.Id}");
             }
-            else
+            else if (e.Message.Chat.Id != chatId && e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Voice)
             {
-                var user =  service.FindUser(e.Message.ReplyToMessage.ForwardFrom.Id);
-                //_botClient.SendTextMessageAsync(Id.ChatId, e.Message.Text);
-                _botClient.SendTextMessageAsync(user.ChatId, e.Message.Text);
+                var voice = e.Message.Voice;
+
+                _botClient.SendTextMessageAsync(e.Message.Chat.Id, "Sizning habaringiz muvaffaqiyatli yuborildi");
+                //_botClient.SendTextMessageAsync(chatId, $"{e.Message.Text} | {e.Message.Chat.Id}");
+                _botClient.SendVoiceAsync(chatId,voice.FileId,caption: $"{e.Message.Text} | {e.Message.Chat.Id}");
             }
-            //else if (e.Message.ReplyToMessage != null && e.Message.ReplyToMessage.ForwardFrom != null)
-            //{
-            //}
+            else if (e.Message.Chat.Id == chatId && e.Message.ReplyToMessage.Text != null)
+            {
+                string[] data = e.Message.ReplyToMessage.Text.Split("|");
+
+                _botClient.SendTextMessageAsync(data[1], e.Message.Text);
+            }
+            else if (e.Message.Chat.Id == chatId && e.Message.ReplyToMessage.Voice != null)
+            {
+                //var res = e.Message.ReplyToMessage.Text;
+
+                //_botClient.SendTextMessageAsync(data[1], e.Message.Text);
+            }
         }
     }
 }
