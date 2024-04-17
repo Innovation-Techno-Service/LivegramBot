@@ -1,14 +1,10 @@
-﻿using LivegramBot.Entities;
-using LivegramBot.Services;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Args;
-
 namespace LivegramBot
 {
     public class Program
     {
         public static ITelegramBotClient _botClient;
-
         public static void Main(string[] args)
         {
             _botClient = new TelegramBotClient("7086530018:AAFBbs_rua6mjiIYTq6pQsoQMKxnnK_XzHQ");
@@ -19,52 +15,55 @@ namespace LivegramBot
 
             Console.ReadLine();
         }
-
-        public static void OnMessage(object? sender, MessageEventArgs e)
+        public static async void OnMessage(object? sender, MessageEventArgs e)
         {
-            UserService service = new UserService();
-            
             string text = e.Message.Text;
 
             long chatId = 2017110018;
 
             if (text == "/start")
             {
-                _botClient.SendTextMessageAsync(e.Message.Chat.Id, "Assalomu aleykum !\r\n\r\nBo't bo'yicha qanday savol taklif yoki shikoyatingiz bo'lsa bizga bemalol yo'llashingiz mumkin");
-
-                User user = new User();
-                user.ChatId = e.Message.Chat.Id;
-                user.UserName = e.Message.Chat.Username;
-                user.FirstName = e.Message.Chat.FirstName;
-                user.LastName = e.Message.Chat.LastName;
-                int response = service.AddUserAsync(user);
-
-                Console.WriteLine(response);
+                await _botClient.SendTextMessageAsync(e.Message.Chat.Id, "Assalomu aleykum !\r\n\r\nBo't bo'yicha qanday savol taklif yoki shikoyatingiz bo'lsa bizga bemalol yo'llashingiz mumkin");
             }
             else if (e.Message.Chat.Id != chatId && e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Text)
             {
-                _botClient.SendTextMessageAsync(e.Message.Chat.Id, "Sizning habaringiz muvaffaqiyatli yuborildi");
-                _botClient.SendTextMessageAsync(chatId, $"{e.Message.Text} | {e.Message.Chat.Id}");
+                await _botClient.SendTextMessageAsync(e.Message.Chat.Id, "Sizning habaringiz muvaffaqiyatli yuborildi");
+                await _botClient.SendTextMessageAsync(chatId, $"{e.Message.Text} | {e.Message.Chat.Id}");
             }
             else if (e.Message.Chat.Id != chatId && e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Voice)
             {
-                var voice = e.Message.Voice;
+                await _botClient.SendTextMessageAsync(e.Message.Chat.Id, "Sizning ovozli habaringiz muvaffaqiyatli yuborildi");
+                await _botClient.SendVoiceAsync(chatId, e.Message.Voice.FileId, caption: $"{e.Message.Text} | {e.Message.Chat.Id}");
+            }
+            else if (e.Message.Chat.Id != chatId && e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Video)
+            {
+                await _botClient.SendTextMessageAsync(e.Message.Chat.Id, "Sizning video habaringiz muvaffaqiyatli yuborildi");
 
-                _botClient.SendTextMessageAsync(e.Message.Chat.Id, "Sizning habaringiz muvaffaqiyatli yuborildi");
-                //_botClient.SendTextMessageAsync(chatId, $"{e.Message.Text} | {e.Message.Chat.Id}");
-                _botClient.SendVoiceAsync(chatId,voice.FileId,caption: $"{e.Message.Text} | {e.Message.Chat.Id}");
+                await _botClient.SendVideoAsync(chatId, e.Message.Video.FileId, caption: $"{e.Message.Text} | {e.Message.Chat.Id}");
+            }
+            else if (e.Message.Chat.Id != chatId && e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Photo)
+            {
+                await _botClient.SendTextMessageAsync(e.Message.Chat.Id, "Sizning rasmingiz muvaffaqiyatli yuborildi");
+                
+                var photo = e.Message.Photo[^1];
+                var file = await _botClient.GetFileAsync(photo.FileId);
+
+                await _botClient.SendPhotoAsync(chatId, file.FileId, caption: $"{e.Message.Text} | {e.Message.Chat.Id}");
             }
             else if (e.Message.Chat.Id == chatId && e.Message.ReplyToMessage.Text != null)
             {
                 string[] data = e.Message.ReplyToMessage.Text.Split("|");
 
-                _botClient.SendTextMessageAsync(data[1], e.Message.Text);
+                await _botClient.SendTextMessageAsync(data[1], e.Message.Text);
             }
-            else if (e.Message.Chat.Id == chatId && e.Message.ReplyToMessage.Voice != null)
+            else if (e.Message.Chat.Id == chatId && e.Message.ReplyToMessage != null)
             {
-                //var res = e.Message.ReplyToMessage.Text;
+                if (e.Message.ReplyToMessage.Video != null || e.Message.ReplyToMessage.Voice != null || e.Message.ReplyToMessage.Photo != null)
+                {
+                    string[] data = e.Message.ReplyToMessage.Caption.Split("|");
 
-                //_botClient.SendTextMessageAsync(data[1], e.Message.Text);
+                    await _botClient.SendTextMessageAsync(data[1], e.Message.Text);
+                }
             }
         }
     }
